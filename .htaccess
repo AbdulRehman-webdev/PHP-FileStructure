@@ -1,0 +1,102 @@
+#Rewrite edit-employee.php?id=1 to edit-employee/employee1
+#RewriteEngine On
+#RewriteRule ^([^/\.]+)/([^/\.]+)?$ edit-employee.php?id=$2
+
+#Rewrite remove .php
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([^\.]+)$ $1.php [NC,L]
+
+#Rewrite remove .html
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([^\.]+)$ $1.html [NC,L]
+
+Options All -Indexes
+# enable directory browsing
+Options All +Indexes
+
+<Files privatefile.jpg>
+ order allow,deny
+ deny from all
+</Files>
+
+<FilesMatch ".(htaccess|htpasswd|ini|phps|fla|psd|log|sh)$">
+ Order Allow,Deny
+ Deny from all
+</FilesMatch>
+
+RewriteEngine on
+RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK)
+RewriteRule .* - [F]
+
+# htaccess header set cache-control
+<IfModule mod_expires.c>
+ExpiresActive On
+ExpiresByType image/jpg "access plus 1 year"
+ExpiresByType image/jpeg "access plus 1 year"
+ExpiresByType image/gif "access plus 1 year"
+ExpiresByType image/png "access plus 1 year"
+ExpiresByType text/css "access plus 1 month"
+ExpiresByType application/pdf "access plus 1 month"
+ExpiresByType text/x-javascript "access plus 1 month"
+ExpiresByType application/x-shockwave-flash "access plus 1 month"
+ExpiresByType application/x-font-woff "access plus 1 year"
+ExpiresByType image/svg+xml "access plus 1 year"
+ExpiresByType image/x-icon "access plus 1 year"
+ExpiresDefault "access 1 month"
+</IfModule>
+
+
+<ifModule mod_headers.c>
+ <filesMatch ".(css|jpg|jpeg|png|gif|js|ico)$">
+ Header set Cache-Control "max-age=2592000, public"
+ </filesMatch>
+ <filesMatch "\.(x?html?|php)$">
+ Header set Cache-Control "private, must-revalidate"
+ </filesMatch>
+</ifModule>
+
+# Prevent XSS attacks using .htaccess
+RewriteCond %{QUERY_STRING} http://([a-zA-Z0-9_\-]*) [NC,OR]
+RewriteCond %{QUERY_STRING} http:/([a-zA-Z0-9_\-]*) [NC,OR]
+RewriteCond %{QUERY_STRING} cmd= [NC,OR]
+RewriteCond %{QUERY_STRING} &cmd [NC,OR]
+RewriteCond %{QUERY_STRING} exec [NC,OR]
+RewriteCond %{QUERY_STRING} execu [NC,OR]
+RewriteCond %{QUERY_STRING} concat [NC]
+RewriteCond %{REQUEST_METHOD} ^(HEAD|TRACE|DELETE|TRACK) [NC,OR]
+RewriteCond %{THE_REQUEST} ^.*(\
+|\
+|%0A|%0D).* [NC,OR]
+RewriteCond %{HTTP_REFERER} ^(.*)(<|>|'|%0A|%0D|%27|%3C|%3E|).* [NC,OR]
+RewriteCond %{HTTP_COOKIE} ^.*(<|>|'|%0A|%0D|%27|%3C|%3E|).* [NC,OR]
+RewriteCond %{REQUEST_URI} ^/(,|;|:|<|>|">|"<|/|\\\.\.\\).{0,9999}.* [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^$ [OR]
+RewriteCond %{HTTP_USER_AGENT} ^(java|curl|wget).* [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*(winhttp|HTTrack|clshttp|archiver|loader|email|harvest|extract|grab|miner).* [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*(libwww-perl|curl|wget|python|nikto|scan).* [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*(<|>|'|%0A|%0D|%27|%3C|%3E|).* [NC,OR]
+RewriteCond %{QUERY_STRING} ^.*(;|<|>|'|"|\)|%0A|%0D|%22|%27|%3C|%3E|).*(/\*|union|select|insert|cast|set|declare|drop|update|md5|benchmark|print|printf|system|exec|scanf).* [NC,OR]
+RewriteCond %{QUERY_STRING} ^.*(localhost|loopback|127\.0\.0\.1).* [NC,OR]
+RewriteCond %{QUERY_STRING} ^.*(<|>|'|%0A|%0D|%27|%3C|%3E|).* [NC]
+RewriteRule ^.* - [F]
+
+# Prevent SQL Injections
+RewriteCond %{QUERY_STRING} UNION([%20\ /\*+]*)ALL([%20\ /\*+]*)SELECT [NC,OR]
+RewriteCond %{QUERY_STRING} UNION([%20\ /\*+]*)SELECT [NC,OR]
+RewriteCond %{QUERY_STRING} /\* [NC,OR]
+RewriteCond %{QUERY_STRING} \*/ [NC]
+RewriteRule ^.* - [F]
+RewriteCond %{QUERY_STRING} base64_encode.*\(.*\) [OR]
+RewriteCond %{QUERY_STRING} http:.*\/.*\/ [OR]
+RewriteCond %{QUERY_STRING} ..*\/ [OR]
+RewriteCond %{QUERY_STRING} (\<|%3C).*script.*(\>|%3E) [NC,OR]
+RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+RewriteCond %{QUERY_STRING} [^a-z](declare|char|set|cast|convert|delete|drop|exec|insert|meta|script|select|truncate|update)[^a-z] [NC]
+RewriteRule (.*) - [F]
+
+# Checks if the file is physically NOT present
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([a-z0-9-]+)+/([a-z0-9-]+)\.html$	/controller.php?partA=$1&partB=$2 [L]
